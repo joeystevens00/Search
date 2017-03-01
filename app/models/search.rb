@@ -3,15 +3,17 @@ require 'open-uri'
 class Search
   TPB_URL="https://thepiratebay.org"
 
-  def initialize(search)
-    @search = search
+  def initialize(query)
+    @query = query
+    @search = {}
   end
 
-  def search
+  def tpb
     # Returns a hash containing name => [name, url, detail_page]
     resp = {}
+    rank = 0
     begin
-      tpb_resp = Nokogiri::HTML(open("#{TPB_URL}/search/#{@search}"))
+      tpb_resp = Nokogiri::HTML(open("#{TPB_URL}/search/#{@query}"))
       # Iterate through every row in the search result table except the header row (always first)
       tpb_resp.css("tr:not(:first-child)").each do |link|
         # Get Size
@@ -27,13 +29,22 @@ class Search
         # Grab the link to the detail page
         detail_page = link.css('.detLink').attribute('href').text
         detail_page="#{TPB_URL}#{detail_page}"
-        resp.store(name, [name, magnet, detail_page, seeders, leechers, size])
+        resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
+        rank+=1
       end
       resp
     rescue => explode
       "ERROR: #{explode}" # Just throw any ol' error in explode
     end
   end
+
+  def search
+    # Contains the search object which contains the response objects
+    # Search object: { source => response_object }
+    # Response Object: { torret_name => torrent_attributes }
+    response_object_tpb = tpb
+    @search.store("TPB", tpb)
+    @search
+  end
 end
 
-p Search.new("test").search

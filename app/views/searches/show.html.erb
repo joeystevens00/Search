@@ -12,25 +12,27 @@
         <th>From</th><th>Title</th><th>Download</th><th>Details</th><th>Size</th><th>SE</th><th>LE</th>
       </tr>
       <% begin %>
-          <%  @results.each do |keyname, array|
-            name=array[0]
-            magnet=array[1]
-            detail_page=array[2]
-            seeders=array[3]
-            leechers=array[4]
-            size=array[5] %>
-              <tr>
-                <th>TPB</th>
-                <th><%= name %></th>
-                <th><a href="<%= magnet %>">download</a></th>
-                <th><a href="<%= detail_page %>">details</a></th>
-                <th><%= size %></th>
-                <th><%= seeders %></th>
-                <th><%= leechers %></th>
-              </tr>
+          <% @results.each do |source, response_object| %>
+            <%  response_object.each do |torrent_name, array|
+              rank=array[0]
+              magnet=array[1]
+              detail_page=array[2]
+              seeders=array[3]
+              leechers=array[4]
+              size=array[5] %>
+               <tr>
+                 <th><%= source %></th>
+                 <th><%= torrent_name %></th>
+                 <th><a href="<%= magnet %>">download</a></th>
+                 <th><a href="<%= detail_page %>">details</a></th>
+                 <th><%= size %></th>
+                 <th><%= seeders %></th>
+                 <th><%= leechers %></th>
+               </tr>
+           <% end %>
           <% end %>
-      <% rescue => explode %>
-          ERROR: <% explode %>
-      <% end %>
-    </table>
+        <%  rescue => explode %>
+           ERROR: <% explode %>
+      </table>
+  <% end %>
 <% end %>
