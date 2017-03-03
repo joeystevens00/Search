@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'open-uri'
+require 'socksify/http'
 
 class Search
   TPB_URL="https://thepiratebay.org"
@@ -11,10 +12,28 @@ class Search
     @search = {}
   end
 
+  def getUrl(url)
+    # Expects a url and returns a Nokogiri::HTML object
+    if ENV["SEARCHER_PROXY_HOST"].nil?
+      html=Nokogiri::HTML(open(url))
+    else
+      if ENV['SEARCHER_PROXY_TYPE'] == 'socks'
+        http = Net::HTTP::SOCKSProxy(ENV['SEARCHER_PROXY_HOST'], ENV['SEARCHER_PROXY_PORT'])
+        html = http.get(URI(url))
+        html = Nokogiri::HTML(html)
+      elsif ENV['SEARCHER_PROXY_TYPE'] == 'http'
+        Nokogiri::HTML(open(url), :proxy => "#{ENV['SEARCHER_PROXY_HOST']}:#{ENV['SEARCHER_PROXY_PORT']}")
+      else
+        return 'FATAL: INVALID PROXY TYPE. CANNOT RISK CONTINUING'
+      end
+    end
+    html
+  end
+
   def kickass_torrents
     resp = {}
     rank = 0
-    ka_torr=Nokogiri::XML(open("#{KICKASS_TORRENTS_URL}/usearch/#{@query}/?rss=1"))
+    ka_torr=getUrl("#{KICKASS_TORRENTS_URL}/usearch/#{@query}/?rss=1")
     ka_torr.xpath("//item").each do |item|
       seeders="?"
       leechers="?"
@@ -35,7 +54,7 @@ class Search
     rank = 0
 
     begin
-      tpb_resp = Nokogiri::HTML(open("#{TPB_URL}/search/#{@query}"))
+      tpb_resp = getUrl("#{TPB_URL}/search/#{@query}")
       # Iterate through every row in the search result table except the header row (always first)
       tpb_resp.css("tr:not(:first-child)").each do |link|
         # Get Size
