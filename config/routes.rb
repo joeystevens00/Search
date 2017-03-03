@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
   root 'searches#show'
+  post '/api/new_torrent', to: 'deluged_integration#new'
   resource :searches
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
 end
