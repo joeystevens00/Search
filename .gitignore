@@ -14,8 +14,6 @@
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
-!/log/.keep
-!/tmp/.keep
 vendor/cache/*
 nohup.out
 # Ignore Byebug command history file.
