@@ -2,7 +2,7 @@ require 'deluge'
 class DelugedIntegration
   def initialize(torrent)
     @torrent = torrent
-    @response = {:response => 'No Content'}
+    @response = {:response => 'No Content', :success => '1'}
   end
 
   def add_torrent
@@ -17,11 +17,19 @@ class DelugedIntegration
      else
        resp = deluge.core.add_torrent_url(@torrent, "")
      end
-      resp.nil? ? response_str="Error: Likely a duplicate request" : response_str=resp
+      if resp.nil?
+        response_str="Error: Likely a duplicate request"
+        success_val=1
+      else
+        response_str=resp
+        success_val=0
+      end
         rescue => explode
-      @response=explode # Just throw any ol' error in explode
+      response_str=explode # Just throw any ol' error in explode
+      success_val=1
     end
     @response[:response]=response_str
+    @response[:success]=success_val
     @response.to_json
   end
 end

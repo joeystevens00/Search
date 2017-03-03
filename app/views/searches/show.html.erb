@@ -1,3 +1,8 @@
+<status>
+<div class="success">Success :-) Check the progress at <%= ENV["DELUGE_WEB_URL"] %></div>
+<div class="fail">Fail :-( Is the file already downloading? Check at <%= ENV["DELUGE_WEB_URL"] %></div>
+</status>
+
 <header>
 <%= form_for :search, method: "get" do |f| %>
       <%= f.label :search %>
@@ -6,6 +11,7 @@
 <% end %>
 </header>
 
+<results>
 <% if not @results.nil? %>
     <table>
       <tr>
@@ -23,7 +29,7 @@
                <tr>
                  <th><%= source %></th>
                  <th><%= torrent_name %></th>
-                 <th><a href="<%= magnet %>">download</a></th>
+                 <th><a href="#" onclick='newTorrent("<%= magnet %>")'>download</a></th>
                  <th><a href="<%= detail_page %>">details</a></th>
                  <th><%= size %></th>
                  <th><%= seeders %></th>
@@ -36,3 +42,4 @@
       </table>
   <% end %>
 <% end %>
+</results>
