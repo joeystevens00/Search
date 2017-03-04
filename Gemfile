@@ -5,6 +5,7 @@ git_source(:github) do |repo_name|
   "https://github.com/#{repo_name}.git"
 end
 gem 'socksify'
+gem 'jquery-datatables-rails', '~> 3.4.0'
 gem 'deluge-rpc', :git => 'https://github.com/bytesizedhosting/deluge-rpc.git'
 gem 'barista'
 gem 'therubyracer', :require => nil

@@ -14,38 +14,46 @@ class Search
 
   def getUrl(url)
     # Expects a url and returns a Nokogiri::HTML object
-    if ENV["SEARCHER_PROXY_HOST"].nil?
-      html=Nokogiri::HTML(open(url))
-    else
-      if ENV['SEARCHER_PROXY_TYPE'] == 'socks'
-        http = Net::HTTP::SOCKSProxy(ENV['SEARCHER_PROXY_HOST'], ENV['SEARCHER_PROXY_PORT'])
-        html = http.get(URI(url))
-        html = Nokogiri::HTML(html)
-      elsif ENV['SEARCHER_PROXY_TYPE'] == 'http'
-        Nokogiri::HTML(open(url), :proxy => "#{ENV['SEARCHER_PROXY_HOST']}:#{ENV['SEARCHER_PROXY_PORT']}")
+    begin
+      if ENV["SEARCHER_PROXY_HOST"].nil?
+       html=Nokogiri::HTML(open(url))
       else
-        return 'FATAL: INVALID PROXY TYPE. CANNOT RISK CONTINUING'
+        if ENV['SEARCHER_PROXY_TYPE'] == 'socks'
+         http = Net::HTTP::SOCKSProxy(ENV['SEARCHER_PROXY_HOST'], ENV['SEARCHER_PROXY_PORT'])
+          html = http.get(URI(url))
+         html = Nokogiri::HTML(html)
+        elsif ENV['SEARCHER_PROXY_TYPE'] == 'http'
+         Nokogiri::HTML(open(url), :proxy => "#{ENV['SEARCHER_PROXY_HOST']}:#{ENV['SEARCHER_PROXY_PORT']}")
+        else
+         return 'FATAL: INVALID PROXY TYPE. CANNOT RISK CONTINUING'
+       end
       end
+      html
+    rescue
+      false
     end
-    html
   end
 
   def kickass_torrents
     resp = {}
     rank = 0
     ka_torr=getUrl("#{KICKASS_TORRENTS_URL}/usearch/#{@query}/?rss=1")
-    ka_torr.xpath("//item").each do |item|
-      seeders="?"
-      leechers="?"
-      magnet=item.css("enclosure").attribute("url").text
-      size=item.css("enclosure").attribute("length").text
-      detail_page=item.css("guid").text
-      detail_page="#{KICKASS_TORRENTS_URL}#{detail_page}"
-      name=item.css("title").text
-      resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
-      rank+=1
+    if ka_torr
+      ka_torr.xpath("//item").each do |item|
+       seeders="?"
+       leechers="?"
+       magnet=item.css("enclosure").attribute("url").text
+       size=item.css("enclosure").attribute("length").text
+       detail_page=item.css("guid").text
+       detail_page="#{KICKASS_TORRENTS_URL}#{detail_page}"
+       name=item.css("title").text
+       resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
+       rank+=1
+      end
+      resp
+    else
+      false
     end
-    resp
   end
 
   def tpb
@@ -85,8 +93,8 @@ class Search
     # Response Object: { torret_name => torrent_attributes }
     response_object_kat = kickass_torrents
     response_object_tpb = tpb
-    @search.store("TPB", response_object_tpb)
-    @search.store("KickAss Torrents", response_object_kat)
+    @search.store("TPB", response_object_tpb) if response_object_tpb
+    @search.store("KickAss Torrents", response_object_kat) if response_object_kat
     @search
   end
 end

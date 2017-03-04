@@ -1,6 +1,39 @@
 // Place all the styles related to the searches controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+body {
+  background-color: #3F3F3F;
+
+}
+#results_length, #results_filter, #results_paginate, #results_info {
+  color: #6E6E6E !important;
+}
+
+table {
+  padding-top: 5px;
+}
+
+input, select {
+  scrollbar-arrow-color: #6E6E6E;
+  scrollbar-base-color: #6E6E6E;
+  background-color: #6E6E6E;
+ color: white;
+ border-color: #6E6E6E;
+  border-style: solid;
+}
+
+a {
+  color: #b8e368;
+}
+a:hover {
+  color: #c1c968;
+}
+
+a:visited {
+ color: #9ED930;
+}
+
+
 input#search_search
 {
  width: 50%
@@ -9,11 +42,30 @@ th
 {
   text-align: left
 }
+tr {
+  background-color: #6E6E6E !important;
+
+}
+
+.paging_full_numbers a.paginate_button {
+  color: blue !important;
+}
+
+th.sorting, th.sorting_asc, th.sorting_desc, .current {
+  color: #E46A6B !important;
+  background-color: #040404 !important;
+}
 
 header
 {
+  color: #E46A6B;
+  width: 100%;
   border-bottom: 2px;
   border-color: black;
+  text-align: center;
+  font-size: 30px;
+  line-height: 108px;
+  height: 108px;
 }
 
 .success, .fail {

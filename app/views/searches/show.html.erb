@@ -1,22 +1,33 @@
-<status>
-<div class="success">Success :-) Check the progress at <%= ENV["DELUGE_WEB_URL"] %></div>
-<div class="fail">Fail :-( Is the file already downloading? Check at <%= ENV["DELUGE_WEB_URL"] %></div>
-</status>
+
 
 <header>
 <%= form_for :search, method: "get" do |f| %>
-      <%= f.label :search %>
+      <%= f.label :find_torrent %>
       <%= f.text_field :search %>
-      <%= f.submit %>
+      <%= f.submit "Go" %>
 <% end %>
 </header>
 
+<status>
+  <div class="success">Success :-) Check the progress at <%= ENV["DELUGE_WEB_URL"] %></div>
+  <div class="fail">Fail :-( Is the file already downloading? Check at <%= ENV["DELUGE_WEB_URL"] %></div>
+</status>
+
 <results>
 <% if not @results.nil? %>
-    <table>
+    <table id="results"  class="datatable">
+      <thead>
       <tr>
-        <th>From</th><th>Title</th><th>Download</th><th>Details</th><th>Size</th><th>SE</th><th>LE</th>
+        <th>From</th>
+        <th>Title</th>
+        <th>Download</th>
+        <th>Details</th>
+        <th>Size</th>
+        <th>SE</th>
+        <th>LE</th>
       </tr>
+      </thead>
+      <tbody>
       <% begin %>
           <% @results.each do |source, response_object| %>
             <%  response_object.each do |torrent_name, array|
@@ -29,7 +40,7 @@
                <tr>
                  <th><%= source %></th>
                  <th><%= torrent_name %></th>
-                 <th><a href="#" onclick='newTorrent("<%= magnet %>")'>download</a></th>
+                 <th><a href="#" onclick='newTorrent("<%= magnet %>");'>download</a></th>
                  <th><a href="<%= detail_page %>">details</a></th>
                  <th><%= size %></th>
                  <th><%= seeders %></th>
@@ -39,6 +50,7 @@
           <% end %>
         <%  rescue => explode %>
            ERROR: <% explode %>
+          </tbody>
       </table>
   <% end %>
 <% end %>
