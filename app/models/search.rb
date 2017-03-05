@@ -7,10 +7,29 @@ class Search
   EXTRA_TORRENT_URL="http://extratorrent.cc"
   KICKASS_TORRENTS_URL="http://kickasstorrents.to"
   EZTV_URL="https://eztv.ag"
+  BITSNOOP_URL="https://bitsnoop.com"
 
   def initialize(query)
     @query = query
     @search = {}
+  end
+  def bytes_to_biggest_unit(size)
+    if size % 1000000000000 < size
+      converted_size = size.to_f / 1000000000000.00
+      conversion = "TB"
+    elsif size % 1000000000 < size
+      converted_size = size.to_f / 1000000000.00
+      conversion = "GB"
+    elsif size % 1000000 < size
+      converted_size = size.to_f / 1000000.00
+      conversion = "MB"
+    elsif size % 1000 < size
+      converted_size = size.to_f	 / 1000.00
+      conversion = "KB"
+    else
+      return "Invalid entry"
+    end
+    "#{converted_size} #{conversion}"
   end
 
   def getUrl(url)
@@ -42,7 +61,7 @@ class Search
       eztv_torrents.css("tr.forum_header_border").each do |torrent|
         name=torrent.css("a.epinfo").text
         detail_page=torrent.css(".epinfo").attribute("href").text
-        detail_page="#{EZTV_URL}#{detail_page}}"
+        detail_page="#{EZTV_URL}#{detail_page}"
         if not torrent.css("a.magnet").to_s.empty?
           magnet=torrent.css("a.magnet").attribute("href").text
         elsif not torrent.css("a.download_2").to_s.empty?
@@ -54,7 +73,6 @@ class Search
         end
         size=torrent.text.split("\n").grep(/^[0-9].*/)[0]
         seeders=torrent.text.split("\n").grep(/^[0-9]+$/)[0]
-        seeders
         leechers=""
         resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
         rank+=1
@@ -65,7 +83,39 @@ class Search
       false
     end
 
+  def parse_rss(searchurl, baseurl, baseurl_included_in_detail_page_links)
+    resp = {}
+    rank = 0
+    rss_torrents=getUrl(searchurl)
+    if rss_torrents
+      rss_torrents.xpath("//item").each do |item|
+        seeders=item.css("seeders").text.to_i
+        leechers=item.css("leechers").text.to_i
+        magnet=item.css("enclosure").attribute("url").text
+        size=item.css("enclosure").attribute("length").text
+        if size.match(/^[0-9]+$/) # If size is in bytes
+          size=bytes_to_biggest_unit(size.to_i)
+        end
+        detail_page=item.css("guid").text
+        detail_page="#{baseurl}#{detail_page}" if baseurl_included_in_detail_page_links
+        name=item.css("title").text
+        # If we don't have a title then we'll just parse one out of the URL.. this happens on ExtraTorrent
+        name=URI.decode(item.css("enclosure")
+                            .attribute("url")
+                            .text.split("/")
+                            .last.gsub(".torrent", "")
+                            .gsub("+", " ")) if name.blank?
+        resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
+        rank+=1
+      end
+      resp
+    else
+      false
+    end
+  end
+
   def kickass_torrents
+    # Deprecated by generic parse_rss
     resp = {}
     rank = 0
     ka_torr=getUrl("#{KICKASS_TORRENTS_URL}/usearch/#{@query}/?rss=1")
@@ -121,13 +171,19 @@ class Search
   def search
     # Contains the search object which contains the response objects
     # Search object: { source => response_object }
-    # Response Object: { torret_name => torrent_attributes }
-    response_object_kat = kickass_torrents
+    # Response Object: { torret_name => torrent_attributes
+    response_object_kat = parse_rss("#{KICKASS_TORRENTS_URL}/usearch/#{@query}/?rss=1", KICKASS_TORRENTS_URL, true)
+    # https://bitsnoop.com/search/all/test/?fmt=rss
+    response_object_bitsnoop = parse_rss("#{BITSNOOP_URL}/search/all/#{@query}/?fmt=rss", BITSNOOP_URL, false)
+    # http://extratorrent.cc/rss.xml?type=search&search=test
+    response_object_extratorrent = parse_rss("#{EXTRA_TORRENT_URL}/rss.xml?type=search&search=#{@query}", EXTRA_TORRENT_URL, false)
     response_object_tpb = tpb
     response_object_eztv = eztv
     @search.store("TPB", response_object_tpb) if response_object_tpb
     @search.store("KickAss Torrents", response_object_kat) if response_object_kat
     @search.store("EZTV", response_object_eztv) if response_object_eztv
+    @search.store("Bitsnoop", response_object_bitsnoop) if response_object_bitsnoop
+    @search.store("Extra Torrent", response_object_extratorrent) if response_object_extratorrent
     @search
   end
 end
