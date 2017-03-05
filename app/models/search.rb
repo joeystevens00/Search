@@ -60,11 +60,10 @@ class Search
         rank+=1
       end
       resp
-  #  rescue => explode
-  #    p "ERROR: #{explode}" # Just throw any ol' error in explode
-  #    false
+    rescue => explode
+      p "ERROR: #{explode}" # Just throw any ol' error in explode
+      false
     end
-  #end
 
   def kickass_torrents
     resp = {}
