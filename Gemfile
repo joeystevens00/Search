@@ -4,6 +4,7 @@ git_source(:github) do |repo_name|
   repo_name = "#{repo_name}/#{repo_name}" unless repo_name.include?("/")
   "https://github.com/#{repo_name}.git"
 end
+gem 'dotenv-rails', groups: [:development, :test]
 gem 'socksify'
 gem 'jquery-datatables-rails', '~> 3.4.0'
 gem 'deluge-rpc', :git => 'https://github.com/bytesizedhosting/deluge-rpc.git'

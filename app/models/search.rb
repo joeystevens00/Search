@@ -71,7 +71,7 @@ class Search
         else
           return false
         end
-        size=torrent.text.split("\n").grep(/^[0-9].*/)[0]
+        size=torrent.text.split("\n").grep(/^([0-9]+\.[0-9]|[0-9])+ ([A-Z]|[a-z]){2,3}$/)[0]
         seeders=torrent.text.split("\n").grep(/^[0-9]+$/)[0]
         leechers=""
         resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
@@ -84,12 +84,17 @@ class Search
     end
 
   def parse_rss(searchurl, baseurl, baseurl_included_in_detail_page_links)
+    # Parses RSS feeds and returns a response object
+    # searchurl = the full URL to the search results
+    # baseurl = the CONSTANT url of the site
+    # baseurl_included_in_detail_page_links = true/false depending on if the detail_page links
+    #                                         on the page are relative or absolute
     resp = {}
     rank = 0
     rss_torrents=getUrl(searchurl)
     if rss_torrents
       rss_torrents.xpath("//item").each do |item|
-        seeders=item.css("seeders").text.to_i
+        seeders=item.css("seeders").text.to_i # Converting to int should make it 0 if no data is found (empty string)
         leechers=item.css("leechers").text.to_i
         magnet=item.css("enclosure").attribute("url").text
         size=item.css("enclosure").attribute("length").text

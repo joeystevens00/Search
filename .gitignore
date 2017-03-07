@@ -16,5 +16,6 @@
 /tmp/*
 vendor/cache/*
 nohup.out
+.env.local
 # Ignore Byebug command history file.
 .byebug_history
