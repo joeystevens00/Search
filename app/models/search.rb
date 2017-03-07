@@ -8,6 +8,7 @@ class Search
   KICKASS_TORRENTS_URL="http://kickasstorrents.to"
   EZTV_URL="https://eztv.ag"
   BITSNOOP_URL="https://bitsnoop.com"
+  YTS_URL="https://yts.ag"
 
   def initialize(query)
     @query = query
@@ -81,7 +82,36 @@ class Search
     rescue => explode
       p "ERROR: #{explode}" # Just throw any ol' error in explode
       false
+  end
+
+  def parse_name_from_rss(item_enum)
+    # Pass a Nokogiri element that represents a torrent and this will try to identify a title by trying several things
+    if not item_enum.css("title").text.empty?
+      title=item_enum.css("title").text
+    elsif not item_enum.css("description").css("img").none? # This happens on YTS
+      title=item_enum.css("description").css("img").attribute("alt").text
+    else         # If we still don't have a title then we'll just parse one out of the URL.. this happens on ExtraTorrent
+      title=URI.decode(item_enum.css("enclosure")
+                          .attribute("url")
+                          .text.split("/")
+                          .last.gsub(".torrent", "")
+                          .gsub("+", " "))
     end
+    title
+  end
+
+  def parse_size_from_rss(item_enum)
+    # Pass a Nokogiri element that represents a torrent and this will try to identify the size by trying several things
+    if not item_enum.text.match(/Size: [0-9]+\.[0-9]+ [A-Z][A-Z]/).to_s.sub("Size: ", "").empty? # YTS
+      size=item_enum.text.match(/Size: [0-9]+\.[0-9]+ [A-Z][A-Z]/).to_s.sub("Size: ", "")
+    else
+      size=item_enum.css("enclosure").attribute("length").text # Most everything else
+    end
+    if size.match(/^[0-9]+$/) # If size is in bytes
+      size=bytes_to_biggest_unit(size.to_i)
+    end
+    size
+  end
 
   def parse_rss(searchurl, baseurl, baseurl_included_in_detail_page_links)
     # Parses RSS feeds and returns a response object
@@ -97,19 +127,10 @@ class Search
         seeders=item.css("seeders").text.to_i # Converting to int should make it 0 if no data is found (empty string)
         leechers=item.css("leechers").text.to_i
         magnet=item.css("enclosure").attribute("url").text
-        size=item.css("enclosure").attribute("length").text
-        if size.match(/^[0-9]+$/) # If size is in bytes
-          size=bytes_to_biggest_unit(size.to_i)
-        end
+        size=parse_size_from_rss(item)
         detail_page=item.css("guid").text
         detail_page="#{baseurl}#{detail_page}" if baseurl_included_in_detail_page_links
-        name=item.css("title").text
-        # If we don't have a title then we'll just parse one out of the URL.. this happens on ExtraTorrent
-        name=URI.decode(item.css("enclosure")
-                            .attribute("url")
-                            .text.split("/")
-                            .last.gsub(".torrent", "")
-                            .gsub("+", " ")) if name.blank?
+        name=parse_name_from_rss(item)
         resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
         rank+=1
       end
@@ -182,6 +203,8 @@ class Search
     response_object_bitsnoop = parse_rss("#{BITSNOOP_URL}/search/all/#{@query}/?fmt=rss", BITSNOOP_URL, false)
     # http://extratorrent.cc/rss.xml?type=search&search=test
     response_object_extratorrent = parse_rss("#{EXTRA_TORRENT_URL}/rss.xml?type=search&search=#{@query}", EXTRA_TORRENT_URL, false)
+    # https://yts.ag/rss/test/all/all/0
+    response_object_yts = parse_rss("#{YTS_URL}/rss/#{@query}/all/all/0", YTS_URL, false)
     response_object_tpb = tpb
     response_object_eztv = eztv
     @search.store("TPB", response_object_tpb) if response_object_tpb
@@ -189,6 +212,7 @@ class Search
     @search.store("EZTV", response_object_eztv) if response_object_eztv
     @search.store("Bitsnoop", response_object_bitsnoop) if response_object_bitsnoop
     @search.store("Extra Torrent", response_object_extratorrent) if response_object_extratorrent
+    @search.store("YTS", response_object_yts) if response_object_yts
     @search
   end
 end
