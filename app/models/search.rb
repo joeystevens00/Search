@@ -9,6 +9,7 @@ class Search
   EZTV_URL="https://eztv.ag"
   BITSNOOP_URL="https://bitsnoop.com"
   YTS_URL="https://yts.ag"
+  BTDB_URL="https://btdb.in"
 
   def initialize(query)
     @query = query
@@ -55,7 +56,31 @@ class Search
     end
   end
 
+  def btdb
+    begin
+     resp = {}
+     rank = 0
+     btdb_torrents=getUrl("#{BTDB_URL}/q/#{@query}/")
+     btdb_torrents.css("li.search-ret-item").each do |torrent|
+       name=torrent.css(".item-title").text
+       magnet=torrent.css(".item-meta-info").css("a").attribute("href").text
+       size=torrent.css(".item-meta-info-value").css("span")[0].text
+       detail_page=torrent.css(".item-title").css("a").attribute("href").text
+       detail_page="#{BTDB_URL}/#{detail_page}"
+       seeders=""
+       leechers=""
+       resp.store(name, [rank, magnet, detail_page, seeders, leechers, size])
+       rank+=1
+      end
+      resp
+    rescue => explode
+      p "ERROR: #{explode}" # Just throw any ol' error in explode
+      false
+    end
+  end
+
   def eztv
+    begin
       resp = {}
       rank = 0
       eztv_torrents=getUrl("#{EZTV_URL}/search/#{@query}")
@@ -82,6 +107,7 @@ class Search
     rescue => explode
       p "ERROR: #{explode}" # Just throw any ol' error in explode
       false
+    end
   end
 
   def parse_name_from_rss(item_enum)
@@ -207,12 +233,15 @@ class Search
     response_object_yts = parse_rss("#{YTS_URL}/rss/#{@query}/all/all/0", YTS_URL, false)
     response_object_tpb = tpb
     response_object_eztv = eztv
+    # https://btdb.in/q/test/
+    response_object_btdb = btdb
     @search.store("TPB", response_object_tpb) if response_object_tpb
     @search.store("KickAss Torrents", response_object_kat) if response_object_kat
     @search.store("EZTV", response_object_eztv) if response_object_eztv
     @search.store("Bitsnoop", response_object_bitsnoop) if response_object_bitsnoop
     @search.store("Extra Torrent", response_object_extratorrent) if response_object_extratorrent
     @search.store("YTS", response_object_yts) if response_object_yts
+    @search.store("BTDB", response_object_btdb) if response_object_btdb
     @search
   end
 end
